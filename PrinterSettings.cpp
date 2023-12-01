@@ -158,7 +158,7 @@ PrinterResult ChangePrinterSettings(LPTSTR pPrinterName, short orientation, shor
     }
 
     // Specify exactly what we are attempting to change
-    pi2->pDevMode->dmFields = DM_ORIENTATION | DM_COLOR | DM_DUPLEX | DM_COPIES;
+    pi2->pDevMode->dmFields = DM_ORIENTATION | DM_COLOR | DM_DUPLEX | DM_COPIES | DM_COLLATE;
     pi2->pDevMode->dmOrientation = orientation;
     pi2->pDevMode->dmColor = color;
     pi2->pDevMode->dmDuplex = duplex;
@@ -328,9 +328,9 @@ int main(int argc, char* argv[])
     TCHAR *printerNameT;
     printerNameT = Convert(printerName);
 
-    std::cout << "Setting " << printerName << " " << color << " " << duplex  << std::endl;
-
-    PrinterResult result = ChangePrinterSettings(printerNameT, orientation, color, duplex, copies, collate);
+    PrinterResult result = ChangePrinterSettings(
+        printerNameT, orientation, color, duplex, copies, collate
+    );
 
     if (result != PrinterResult::OK)
     {
