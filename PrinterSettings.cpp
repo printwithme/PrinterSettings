@@ -16,11 +16,12 @@ enum class PrinterResult
     DUPLEX_NOT_SUPPORTED,
     COLOR_NOT_SUPPORTED,
     ORIENTATION_NOT_SUPPORTED,
+    COPIES_NOT_SUPPORTED,
     OTHER_ERROR,
 };
 
 
-PrinterResult ChangePrinterSettings(LPTSTR pPrinterName, short orientation, short color, short duplex)
+PrinterResult ChangePrinterSettings(LPTSTR pPrinterName, short orientation, short color, short duplex, short copies)
 {
     HANDLE hPrinter = NULL;
     DWORD dwNeeded = 0;
@@ -135,12 +136,22 @@ PrinterResult ChangePrinterSettings(LPTSTR pPrinterName, short orientation, shor
         return PrinterResult::DUPLEX_NOT_SUPPORTED;
     }
 
+    // Driver is reporting that it doesn't support this change
+    if (!(pi2->pDevMode->dmFields & DM_COPIES))
+    {
+        GlobalFree(pi2);
+        ClosePrinter(hPrinter);
+        if (pDevMode)
+            GlobalFree(pDevMode);
+        return PrinterResult::COPIES_NOT_SUPPORTED;
+    }
+
     // Specify exactly what we are attempting to change
-    pi2->pDevMode->dmFields = DM_ORIENTATION | DM_COLOR | DM_DUPLEX;
+    pi2->pDevMode->dmFields = DM_ORIENTATION | DM_COLOR | DM_DUPLEX | DM_COPIES;
     pi2->pDevMode->dmOrientation = orientation;
     pi2->pDevMode->dmColor = color;
     pi2->pDevMode->dmDuplex = duplex;
-
+    pi2->pDevMode->dmCopies = copies;
     // Do not attempt to set security descriptor
     pi2->pSecurityDescriptor = NULL;
 
@@ -265,6 +276,11 @@ short DuplexOption(std::string arg)
     }
 }
 
+short CopiesOption(std::string arg)
+{
+    return std::stoi(arg);
+}
+
 int main(int argc, char* argv[])
 {
     if (argc != 7)
@@ -277,13 +293,14 @@ int main(int argc, char* argv[])
     short orientation = OrientationOption(argv[2]);
     short color = ColorOption(argv[3]);
     short duplex = DuplexOption(argv[4]);
+    short copies = CopiesOption(argv[5]);
 
     TCHAR *printerNameT;
     printerNameT = Convert(printerName);
 
     std::cout << "Setting " << printerName << " " << color << " " << duplex  << std::endl;
 
-    PrinterResult result = ChangePrinterSettings(printerNameT, orientation, color, duplex);
+    PrinterResult result = ChangePrinterSettings(printerNameT, orientation, color, duplex, copies);
 
     if (result != PrinterResult::OK)
     {
