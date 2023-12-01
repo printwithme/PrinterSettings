@@ -211,6 +211,22 @@ void usage(char* argv[])
 }
 
 
+short ColorOption(std::string arg)
+{
+    if (arg == "color")
+    {
+        return DMCOLOR_COLOR;
+    }
+    else if (arg == "monochrome")
+    {
+        return DMCOLOR_MONOCHROME;
+    }
+    else
+    {
+        throw new std::invalid_argument("Invalid color option " + arg);
+    }
+}
+
 short DuplexOption(std::string arg)
 {
     if (arg == "vertical")
@@ -240,7 +256,7 @@ int main(int argc, char* argv[])
     }
 
     char* printerName = argv[1];
-    short color = std::string(argv[2]) == "color" ? DMCOLOR_COLOR : DMCOLOR_MONOCHROME;
+    short color = ColorOption(argv[2]);
     short duplex = DuplexOption(argv[3]);
 
     TCHAR *printerNameT;
