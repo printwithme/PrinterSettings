@@ -233,6 +233,7 @@ wchar_t* Convert(char* s)
 
 void usage(char* argv[])
 {
+    std::cout << "Usage: ";
     std::cout << argv[0] << " printer orientation color duplex copies collate" << std::endl;
 }
 
