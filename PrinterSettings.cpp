@@ -12,6 +12,7 @@ enum class PrinterResult
 {
     OK = 0,
     PRINTER_NOT_FOUND = 10,
+    INVALID_ARGUMENT,
     DUPLEX_NOT_SUPPORTED,
     COLOR_NOT_SUPPORTED,
     OTHER_ERROR,
@@ -209,6 +210,27 @@ void usage(char* argv[])
     std::cout << argv[0] << " printer color duplex copies collate" << std::endl;
 }
 
+
+short DuplexOption(std::string arg)
+{
+    if (arg == "vertical")
+    {
+        return DMDUP_VERTICAL;
+    }
+    else if (arg == "horizontal")
+    {
+        return DMDUP_HORIZONTAL;
+    }
+    else if (arg == "simplex")
+    {
+        return DMDUP_SIMPLEX;
+    }
+    else
+    {
+        throw new std::invalid_argument("Invalid duplex option " + arg);
+    }
+}
+
 int main(int argc, char* argv[])
 {
     if (argc != 6)
@@ -219,7 +241,7 @@ int main(int argc, char* argv[])
 
     char* printerName = argv[1];
     short color = std::string(argv[2]) == "color" ? DMCOLOR_COLOR : DMCOLOR_MONOCHROME;
-    short duplex = std::string(argv[3]) == "duplex" ? DMDUP_VERTICAL : DMDUP_SIMPLEX;
+    short duplex = DuplexOption(argv[3]);
 
     TCHAR *printerNameT;
     printerNameT = Convert(printerName);
