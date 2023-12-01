@@ -15,11 +15,12 @@ enum class PrinterResult
     INVALID_ARGUMENT,
     DUPLEX_NOT_SUPPORTED,
     COLOR_NOT_SUPPORTED,
+    ORIENTATION_NOT_SUPPORTED,
     OTHER_ERROR,
 };
 
 
-PrinterResult ChangePrinterSettings(LPTSTR pPrinterName, short color, short duplex)
+PrinterResult ChangePrinterSettings(LPTSTR pPrinterName, short orientation, short color, short duplex)
 {
     HANDLE hPrinter = NULL;
     DWORD dwNeeded = 0;
@@ -111,7 +112,7 @@ PrinterResult ChangePrinterSettings(LPTSTR pPrinterName, short color, short dupl
         ClosePrinter(hPrinter);
         if (pDevMode)
             GlobalFree(pDevMode);
-        return PrinterResult::OTHER_ERROR;
+        return PrinterResult::ORIENTATION_NOT_SUPPORTED;
     }
 
     // Driver is reporting that it doesn't support this change
@@ -135,7 +136,8 @@ PrinterResult ChangePrinterSettings(LPTSTR pPrinterName, short color, short dupl
     }
 
     // Specify exactly what we are attempting to change
-    pi2->pDevMode->dmFields = DM_COLOR | DM_DUPLEX;
+    pi2->pDevMode->dmFields = DM_ORIENTATION | DM_COLOR | DM_DUPLEX;
+    pi2->pDevMode->dmOrientation = orientation;
     pi2->pDevMode->dmColor = color;
     pi2->pDevMode->dmDuplex = duplex;
 
@@ -207,9 +209,25 @@ wchar_t* Convert(char* s)
 
 void usage(char* argv[])
 {
-    std::cout << argv[0] << " printer color duplex copies collate" << std::endl;
+    std::cout << argv[0] << " printer orientation color duplex copies collate" << std::endl;
 }
 
+
+short OrientationOption(std::string arg)
+{
+    if (arg == "portrait")
+    {
+        return DMORIENT_PORTRAIT;
+    }
+    else if (arg == "landscape")
+    {
+        return DMORIENT_LANDSCAPE;
+    }
+    else
+    {
+        throw new std::invalid_argument("Invalid orientation option " + arg);
+    }
+}
 
 short ColorOption(std::string arg)
 {
@@ -249,22 +267,23 @@ short DuplexOption(std::string arg)
 
 int main(int argc, char* argv[])
 {
-    if (argc != 6)
+    if (argc != 7)
     {
         usage(argv);
         return EXIT_FAILURE;
     }
 
     char* printerName = argv[1];
-    short color = ColorOption(argv[2]);
-    short duplex = DuplexOption(argv[3]);
+    short orientation = OrientationOption(argv[2]);
+    short color = ColorOption(argv[3]);
+    short duplex = DuplexOption(argv[4]);
 
     TCHAR *printerNameT;
     printerNameT = Convert(printerName);
 
     std::cout << "Setting " << printerName << " " << color << " " << duplex  << std::endl;
 
-    PrinterResult result = ChangePrinterSettings(printerNameT, color, duplex);
+    PrinterResult result = ChangePrinterSettings(printerNameT, orientation, color, duplex);
 
     if (result != PrinterResult::OK)
     {
