@@ -17,11 +17,12 @@ enum class PrinterResult
     COLOR_NOT_SUPPORTED,
     ORIENTATION_NOT_SUPPORTED,
     COPIES_NOT_SUPPORTED,
+    COLLATE_NOT_SUPPORTED,
     OTHER_ERROR,
 };
 
 
-PrinterResult ChangePrinterSettings(LPTSTR pPrinterName, short orientation, short color, short duplex, short copies)
+PrinterResult ChangePrinterSettings(LPTSTR pPrinterName, short orientation, short color, short duplex, short copies, short collate)
 {
     HANDLE hPrinter = NULL;
     DWORD dwNeeded = 0;
@@ -146,12 +147,24 @@ PrinterResult ChangePrinterSettings(LPTSTR pPrinterName, short orientation, shor
         return PrinterResult::COPIES_NOT_SUPPORTED;
     }
 
+    // Driver is reporting that it doesn't support this change
+    if (!(pi2->pDevMode->dmFields & DM_COLLATE))
+    {
+        GlobalFree(pi2);
+        ClosePrinter(hPrinter);
+        if (pDevMode)
+            GlobalFree(pDevMode);
+        return PrinterResult::COLLATE_NOT_SUPPORTED;
+    }
+
     // Specify exactly what we are attempting to change
     pi2->pDevMode->dmFields = DM_ORIENTATION | DM_COLOR | DM_DUPLEX | DM_COPIES;
     pi2->pDevMode->dmOrientation = orientation;
     pi2->pDevMode->dmColor = color;
     pi2->pDevMode->dmDuplex = duplex;
     pi2->pDevMode->dmCopies = copies;
+    pi2->pDevMode->dmCollate = collate;
+
     // Do not attempt to set security descriptor
     pi2->pSecurityDescriptor = NULL;
 
@@ -276,6 +289,22 @@ short DuplexOption(std::string arg)
     }
 }
 
+short CollateOption(std::string arg)
+{
+    if (arg == "true")
+    {
+        return DMCOLLATE_TRUE;
+    }
+    else if (arg == "false")
+    {
+        return DMCOLLATE_FALSE;
+    }
+    else
+    {
+        throw new std::invalid_argument("Invalid collate option " + arg);
+    }
+}
+
 short CopiesOption(std::string arg)
 {
     return std::stoi(arg);
@@ -294,13 +323,14 @@ int main(int argc, char* argv[])
     short color = ColorOption(argv[3]);
     short duplex = DuplexOption(argv[4]);
     short copies = CopiesOption(argv[5]);
+    short collate = CollateOption(argv[6]);
 
     TCHAR *printerNameT;
     printerNameT = Convert(printerName);
 
     std::cout << "Setting " << printerName << " " << color << " " << duplex  << std::endl;
 
-    PrinterResult result = ChangePrinterSettings(printerNameT, orientation, color, duplex, copies);
+    PrinterResult result = ChangePrinterSettings(printerNameT, orientation, color, duplex, copies, collate);
 
     if (result != PrinterResult::OK)
     {
