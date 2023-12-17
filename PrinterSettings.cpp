@@ -195,9 +195,9 @@ PrinterResult ChangePrinterSettings(LPTSTR pPrinterName, short orientation, shor
     }
 
     // Tell other apps that there was a change
-    SendMessageTimeout(HWND_BROADCAST, WM_DEVMODECHANGE, 0L,
-        (LPARAM)(LPCSTR)pPrinterName,
-        SMTO_NORMAL, 1000, NULL);
+    // SendMessageTimeout(HWND_BROADCAST, WM_DEVMODECHANGE, 0L,
+    //    (LPARAM)(LPCSTR)pPrinterName,
+    //    SMTO_NORMAL, 1000, NULL);
 
     // Clean up
     if (pi2)
